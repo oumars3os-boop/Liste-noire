@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Gestionnaire OTP Sécurisé</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        h1, h2 {
+            color: #333;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            grid-column: 1 / -1;
+            text-align: center;
+            font-size: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .otp-display {
+            display: none;
+            margin: 30px 0;
+            padding: 25px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #667eea;
+        }
+
+        .otp-display.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .otp-code {
+            font-size: 52px;
+            font-weight: bold;
+            color: #667eea;
+            letter-spacing: 12px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            word-break: break-all;
+        }
+
+        .otp-info {
+            color: #666;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+
+        .timer {
+            color: #d9534f;
+            font-weight: bold;
+            font-size: 18px;
+            margin: 15px 0;
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 5px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        .secondary-btn {
+            background: #6c757d;
+        }
+
+        .secondary-btn:hover {
+            box-shadow: 0 5px 20px rgba(108, 117, 125, 0.4);
+        }
+
+        .stats {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .audit-log {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .audit-item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            font-size: 13px;
+        }
+
+        .audit-item:last-child {
+            border-bottom: none;
+        }
+
+        .audit-success {
+            color: #155724;
+            font-weight: bold;
+        }
+
+        .audit-error {
+            color: #721c24;
+            font-weight: bold;
+        }
+
+        .security-info {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #0c3d6b;
+            line-height: 1.6;
+        }
+
+        .security-info strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔐 Gestionnaire OTP Sécurisé</h1>
+
+    <div class="container">
+        <!-- COLONNE 1: GÉNÉRATEUR OTP -->
+        <div class="card">
+            <h2>📱 Générer un Code OTP</h2>
+
+            <form id="otpForm">
+                <div class="form-group">
+                    <label for="clientId">🆔 ID Client *</label>
+                    <input type="text" id="clientId" placeholder="CLIENT_001" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="clientEmail">📧 Email (optionnel)</label>
+                    <input type="email" id="clientEmail" placeholder="client@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="clientPhone">📱 Téléphone (optionnel)</label>
+                    <input type="text" id="clientPhone" placeholder="+33 6 XX XX XX XX">
+                </div>
+
+                <div class="form-group">
+                    <label for="validity">⏱️ Validité (minutes)</label>
+                    <input type="number" id="validity" value="5" min="1" max="60">
+                </div>
+
+                <button type="submit">🔑 Générer Code OTP</button>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Génération sécurisée...</p>
+            </div>
+
+            <div class="message" id="message1"></div>
+
+            <div class="otp-display" id="otpDisplay">
+                <p class="otp-info">Code pour: <strong id="displayClientId"></strong></p>
+                <div class="otp-code" id="otpCode">000000</div>
+                <p class="timer" id="timer"></p>
+                <div class="button-group">
+                    <button type="button" onclick="copyToClipboard()">📋 Copier</button>
+                    <button type="button" class="secondary-btn" onclick="resetForm()">↻ Nouveau</button>
+                </div>
+            </div>
+
+            <div class="security-info">
+                <strong>🔒 Sécurité</strong>
+                ✓ Chiffrement AES-256-GCM<br>
+                ✓ Base de données SQLite<br>
+                ✓ Audit de tous les accès<br>
+                ✓ Code unique par client
+            </div>
+        </div>
+
+        <!-- COLONNE 2: VÉRIFICATION ET STATS -->
+        <div class="card">
+            <h2>✅ Vérifier un Code OTP</h2>
+
+            <form id="verifyForm">
+                <div class="form-group">
+                    <label for="verifyClientId">🆔 ID Client *</label>
+                    <input type="text" id="verifyClientId" placeholder="CLIENT_001" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="verifyCode">🔐 Code OTP *</label>
+                    <input type="text" id="verifyCode" placeholder="000000" maxlength="6" required>
+                </div>
+
+                <button type="submit">✅ Vérifier</button>
+            </form>
+
+            <div class="message" id="message2"></div>
+
+            <h2 style="margin-top: 40px;">📊 Statistiques</h2>
+            <div class="stats">
+                <div class="stat-item">
+                    <span>Clients:</span>
+                    <span class="stat-value" id="statsClients">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>OTP Générés:</span>
+                    <span class="stat-value" id="statsOTPs">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>OTP Actifs:</span>
+                    <span class="stat-value" id="statsActive">0</span>
+                </div>
+            </div>
+
+            <h2 style="margin-top: 40px;">📋 Historique Audit</h2>
+            <div class="form-group">
+                <label for="auditClientId">ID Client pour audit:</label>
+                <input type="text" id="auditClientId" placeholder="CLIENT_001">
+                <button style="margin-top: 10px;" onclick="loadAudit()">📂 Charger</button>
+            </div>
+            <div class="audit-log" id="auditLog"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        let otpTimeout;
+        let timerInterval;
+
+        // ============ GÉNÉRATEUR OTP ============
+        document.getElementById('otpForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const clientId = document.getElementById('clientId').value.trim();
+            const email = document.getElementById('clientEmail').value.trim();
+            const phone = document.getElementById('clientPhone').value.trim();
+            const validity = parseInt(document.getElementById('validity').value) || 5;
+
+            if (!clientId) {
+                showMessage('message1', 'Veuillez entrer un ID client', 'error');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('otpDisplay').classList.remove('show');
+            clearMessage('message1');
+
+            try {
+                const response = await fetch(`${API_URL}/generate-otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ clientId, email, phone, validity })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showMessage('message1', `❌ ${data.error}`, 'error');
+                    return;
+                }
+
+                document.getElementById('displayClientId').textContent = clientId;
+                document.getElementById('otpCode').textContent = data.otp;
+                document.getElementById('otpDisplay').classList.add('show');
+
+                startTimer(validity);
+                showMessage('message1', '✅ Code généré avec succès!', 'success');
+                loadStats();
+
+            } catch (error) {
+                showMessage('message1', `❌ Erreur: ${error.message}`, 'error');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+
+        // ============ VÉRIFICATION OTP ============
+        document.getElementById('verifyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const clientId = document.getElementById('verifyClientId').value.trim();
+            const code = document.getElementById('verifyCode').value.trim();
+
+            if (!clientId || !code) {
+                showMessage('message2', 'Remplissez tous les champs', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/verify-otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ clientId, code })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('message2', `✅ ${data.message}`, 'success');
+                    document.getElementById('verifyForm').reset();
+                    loadStats();
+                } else {
+                    showMessage('message2', `❌ ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage('message2', `❌ Erreur: ${error.message}`, 'error');
+            }
+        });
+
+        // ============ FONCTIONS UTILITAIRES ============
+        function copyToClipboard() {
+            const otp = document.getElementById('otpCode').textContent;
+            navigator.clipboard.writeText(otp).then(() => {
+                showMessage('message1', '✅ Code copié!', 'info');
+            });
+        }
+
+        function resetForm() {
+            document.getElementById('otpForm').reset();
+            document.getElementById('otpDisplay').classList.remove('show');
+            clearMessage('message1');
+            clearTimeout(otpTimeout);
+            clearInterval(timerInterval);
+        }
+
+        function startTimer(minutes) {
+            let seconds = minutes * 60;
+            clearInterval(timerInterval);
+
+            timerInterval = setInterval(() => {
+                seconds--;
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                document.getElementById('timer').textContent = 
+                    `⏱️ Expire dans: ${mins}:${String(secs).padStart(2, '0')}`;
+
+                if (seconds <= 0) {
+                    clearInterval(timerInterval);
+                    showMessage('message1', '⚠️ Code expiré', 'error');
+                    document.getElementById('otpDisplay').classList.remove('show');
+                }
+            }, 1000);
+
+            otpTimeout = setTimeout(() => {
+                document.getElementById('otpDisplay').classList.remove('show');
+            }, minutes * 60 * 1000);
+        }
+
+        function showMessage(id, text, type) {
+            const msg = document.getElementById(id);
+            msg.className = `message ${type} show`;
+            msg.textContent = text;
+        }
+
+        function clearMessage(id) {
+            const msg = document.getElementById(id);
+            msg.textContent = '';
+            msg.className = 'message';
+        }
+
+        // ============ STATISTIQUES ============
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_URL}/stats`);
+                const data = await response.json();
+
+                document.getElementById('statsClients').textContent = data.totalClients;
+                document.getElementById('statsOTPs').textContent = data.totalOTPsGenerated;
+                document.getElementById('statsActive').textContent = data.activeOTPs;
+            } catch (error) {
+                console.error('❌ Erreur stats:', error);
+            }
+        }
+
+        // ============ AUDIT ============
+        async function loadAudit() {
+            const clientId = document.getElementById('auditClientId').value.trim();
+            if (!clientId) {
+                showMessage('message2', 'Entrez un ID client', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/audit/${clientId}`);
+                const data = await response.json();
+
+                const auditLog = document.getElementById('auditLog');
+                if (data.count === 0) {
+                    auditLog.innerHTML = '<p style="color: #999; padding: 20px; text-align: center;">Aucun événement</p>';
+                    return;
+                }
+
+                auditLog.innerHTML = data.data.map(item => `
+                    <div class="audit-item">
+                        <span class="${item.action.includes('SUCCESS') ? 'audit-success' : 'audit-error'}">
+                            ${item.action}
+                        </span>
+                        <div style="color: #666; margin-top: 5px; font-size: 12px;">
+                            ${item.ip_address} • ${new Date(item.created_at).toLocaleString('fr-FR')}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                showMessage('message2', `❌ Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        // Charger les stats au démarrage
+        loadStats();
+        setInterval(loadStats, 30000);
+    </script>
+</body>
+</html>
