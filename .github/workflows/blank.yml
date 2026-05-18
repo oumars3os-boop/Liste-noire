@@ -1,0 +1,47 @@
+name: Générer et Stocker OTP
+
+on:
+  workflow_dispatch:
+    inputs:
+      client_id:
+        description: 'ID du client'
+        required: false
+        default: 'admin_manual'
+  repository_dispatch:
+    types: [blocage_appareil, generate_otp]
+
+jobs:
+  generate-and-commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Récupérer le code source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Générer le code OTP
+        run: |
+          mkdir -p admin
+          python3 - <<EOF
+          import random, json, os, datetime
+          new_otp = "".join([str(random.randint(0, 9)) for _ in range(6)])
+          data = {
+              "current_otp": new_otp,
+              "last_updated": datetime.datetime.now().isoformat(),
+              "target_client": "manual_gen"
+          }
+          with open('admin/access_control.json', 'w') as f:
+              json.dump(data, f, indent=2)
+          print(f"OTP genere: {new_otp}")
+          EOF
+
+      - name: Commit et Push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add admin/access_control.json
+          git commit -m "Automated OTP update" || echo "No changes to commit"
+          git push origin HEAD
