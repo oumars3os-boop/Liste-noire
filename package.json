@@ -1,13 +1,26 @@
 {
-  "name": "walkie-talkie-server",
+  "name": "liste-noire-otp",
   "version": "1.0.0",
-  "description": "Serveur de relais audio et de liaison pour Talkie-Walkie",
+  "description": "Serveur de génération et vérification OTP pour application mobile",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node server.js"
   },
+  "keywords": [
+    "otp",
+    "authentication",
+    "mobile"
+  ],
+  "author": "oumars3os-boop",
+  "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
-    "ws": "^8.13.0"
+    "axios": "^1.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }
